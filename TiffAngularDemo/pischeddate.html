@@ -1,0 +1,36 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>HTML/angular Demo - Tiff P&I Schedule</title>
+    <script src="js/jquery-1.11.1.min.js"></script>
+    <script src="js/angular.min.js"></script>
+    <script src="js/angular-resource.min.js"></script>
+    <script src="js/angular-route.min.js"></script>
+    <script src="js/angular-sanitize.min.js"></script>
+    <script src="js/gpapp.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+</head>
+<body ng-app="gpApp">
+    <div id="mainwrapper">
+        <div ng-controller="PISchedDateCtrl">
+            <div class="topnav">
+                <a href="index.html">Home</a> | <a href="listnav.html">Film List</a> | <a href="schedule.html">Public Schedule</a> | <a href="pischedule.html">P&I Schedule</a> | <a href="programmes_all.html">Programmes</a>
+            </div>
+            <br />
+            <input id="searchq" type="text" /> <input id="searchButton" onclick="DoSearch()" type="button" value="Search" />
+            <br />
+            <br />
+            <div class="transparent">
+                <h4>{{pagename}}</h4>                              
+                <ul class="listci">
+                    <li ng-repeat="eventi in scheddata.Schedule">
+                        {{eventi.scheddate}} | {{eventi.schedtime}} | {{eventi.venuename}}
+                        <a href="event.html?eventid={{eventi.eventid}}">{{eventi.title}}</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+     </div>
+</body>
+</html>

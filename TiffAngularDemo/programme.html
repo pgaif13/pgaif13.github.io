@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>HTML/angular Demo</title>
+    <script src="js/jquery-1.11.1.min.js"></script>
+    <script src="js/angular.min.js"></script>
+    <script src="js/angular-resource.min.js"></script>
+    <script src="js/angular-route.min.js"></script>
+    <script src="js/angular-sanitize.min.js"></script>
+    <script src="js/gpapp.js"></script>    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body ng-app="gpApp">
+    <div id="mainwrapper">
+        <div ng-controller="SingleProgrammeCtrl">
+            <div class="topnav">
+                <a href="index.html">Home</a> | <a href="listnav.html">Film List</a> | <a href="schedule.html">Public Schedule</a> | <a href="pischedule.html">P&I Schedule</a> | <a href="programmes_all.html">Programmes</a>
+            </div>
+            <br />
+            <input id="searchq" type="text" /> <input id="searchButton" onclick="DoSearch()" type="button" value="Search" />
+            <br />
+            <br />
+            <div class="transparent">
+                <h4>{{pagename}}</h4>                             
+                <ul class="listno">
+                    <li ng-repeat="eventi in navdata.EventCollection" class="libotmargin">
+                        <a href="event.html?eventid={{eventi.eventId}}">
+                            <img ng-show="eventi.relatedmedia[0] == null" src="img/placeholder_film_still.gif" style="width:200px" />
+                            <img ng-show="eventi.relatedmedia[0] != null" ng-src="{{eventi.relatedmedia[0].url}}" style="width:200px" />
+                        </a><br />
+                        <a href="event.html?eventid={{eventi.eventId}}">
+                            {{eventi.article}} {{eventi.title}}
+                        </a>
+                    </li>
+                </ul>
+                <!--<div class="row">
+            <div class="col-md-6 col-lg-3" ng-repeat="eventi in navdata.EventCollection">
+                <img ng-src="{{eventi.relatedmedia[0].url}}" style="width:320px" /><br />
+                <a href="event.html?eventid={{eventi.eventId}}">{{eventi.article}} {{eventi.title}}</a>
+            </div>
+                </div>-->
+            </div>
+        </div>
+     </div>
+</body>
+</html>

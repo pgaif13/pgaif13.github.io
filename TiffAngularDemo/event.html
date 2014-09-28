@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>HTML/angular Demo</title>
+    <script src="js/jquery-1.11.1.min.js"></script>
+    <script src="js/jquery.cycle2.js"></script>
+    <script src="js/angular.min.js"></script>
+    <script src="js/angular-resource.min.js"></script>
+    <script src="js/angular-route.min.js"></script>
+    <script src="js/angular-sanitize.min.js"></script>
+    <script src="js/gpapp.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+</head>
+<body ng-app="gpApp">
+    <div id="mainwrapper">
+        <div ng-controller="EventCtrl">
+            <div class="topnav_event">
+                <a href="index.html">Home</a> | <a href="listnav.html">Film List</a> | <a href="schedule.html">Public Schedule</a> | <a href="pischedule.html">P&I Schedule</a> | <a href="programmes_all.html">Programmes</a>
+            </div><br />
+            <input id="searchq" type="text" /> <input id="searchButton" onclick="DoSearch()" type="button" value="Search" />
+            <br />
+            <br />
+            <div class="transparent_event">
+            <h2>{{pagename}}</h2>
+                <div id="eventbody" style="width:100%">
+                    <div class="cycle-slideshow"
+                         data-cycle-fx="scrollHorz"
+                         data-cycle-speed="500">
+                    </div>                    
+                    <!--<img ng-src="{{eventdata.EventCollection[0].relatedmedia[0].url}}" style="width:600px" />
+                     <br />-->
+                    <div style="font-weight:bold;background-color:#F0F0F0">
+                        <p ng-bind-html="filmpitch" />
+                    </div>
+                    <ul>
+                        <li ng-repeat="schedi in eventdata.EventCollection[0].schedule">
+                            {{schedi.longdate}} | {{schedi.schedtime}} | {{schedi.venueName}} <span ng-show="schedi.scheduletype== 1">(P&I)</span>
+                        </li>
+                    </ul>
+                    <p ng-bind-html="filmnote" />
+                    <div id="eventchildren" ng-show="haveparent">
+                        This event is part of the following:
+                        <ul>
+                            <li ng-repeat="parenti in eventdata.EventCollection[0].parents" class="listevent">
+                                <a href="event.html?eventid={{parenti.eventId}}">
+                                    {{parenti.article}} {{parenti.title}}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div id="eventchildren" ng-show="havechildren">
+                        <span>The following are part of this event:</span>
+                        <ul>
+                            <li ng-repeat="childi in eventdata.EventCollection[0].children" class="listevent">
+                                <a href="event.html?eventid={{childi.eventId}}">
+                                    <img ng-src="{{childi.relatedmedia[0].url}}" style="width:200px" />
+                                </a><br />
+                                <a href="event.html?eventid={{childi.eventId}}">
+                                    {{childi.article}} {{childi.title}}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+     </div>
+</body>
+</html>
