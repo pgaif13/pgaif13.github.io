@@ -22,8 +22,41 @@ function DoSearch() {
     }    
 }
 
-
 var gpApp = angular.module('gpApp', ['gpAppControllers', 'ngRoute', 'ngSanitize']);
+
+gpApp.config(function ($httpProvider) {
+    $httpProvider.responseInterceptors.push('myHttpInterceptor');
+
+    var spinnerFunction = function spinnerFunction(data, headersGetter) {
+        $("#spinner").show();
+        return data;
+    };
+
+    $httpProvider.defaults.transformRequest.push(spinnerFunction);
+});
+
+gpApp.factory('myHttpInterceptor', function ($q, $window) {
+    return function (promise) {
+        return promise.then(function (response) {
+            $("#spinner").hide();
+            return response;
+        }, function (response) {
+            $("#spinner").hide();
+            return $q.reject(response);
+        });
+    };
+});
+
+gpApp.factory('myTiffService', function ($http) {
+    return {
+        getTiffApiData: function (apiurl) {           
+            return $http.get(apiurl).then(function (result) {
+                return result.data;
+            },
+            function () { return "Error"; });
+        }
+    }
+});
 
 var gpAppControllers = angular.module('gpAppControllers', [], function ($locationProvider) {
     $locationProvider.html5Mode(true);
@@ -40,129 +73,114 @@ gpAppControllers.controller('HomeCtrl', ['$scope',
       $scope.pagename = "Home Page";
   }]);
 
-gpAppControllers.controller('ListNavCtrl', ['$scope', '$http',
-  function ($scope, $http) {
-      // urls don't work because of cross domain issues
-      // create a local proxy for testing
-      // var apiurl = "/emsproxy/eventcollection/festival?gettitlenav=true&mode=json";
+gpAppControllers.controller('ListNavCtrl', ['$scope', 'myTiffService',
+  function ($scope, $myTiffService) {
       var apiurl = "https://apps.tiff.net/industry/api/emsproxy/eventcollection/festival?gettitlenav=true&mode=json";
-      $scope.pagename = "Film List By Initial";      
-      $http({ method: 'GET', url: apiurl }).
-      success(function (data, status, headers, config) {
-          // this callback will be called asynchronously
-          // when the response is available
-          $scope.pagename = "Film List By Initial.";
-          var navlist = data.TiffTitleNav.split(",");
-          $scope.navdata = navlist;
-      }).
-      error(function (data, status) {
-          // called asynchronously if an error occurs
-          // or server returns response with an error status.
-          $scope.pagename = "Film List By Initial. Error." ;
-          $scope.navdata = "Error getting data. Check cross domain issues?";
+      $scope.pagename = "Film List By Initial";  
+      $myTiffService.getTiffApiData(apiurl).then(function (data) {         
+          if (data == "Error") {
+              $scope.pagename = "Film List By Initial. Error!";
+              $scope.navdata = "Error getting data. Check cross domain issues?";
+          } else {
+              $scope.pagename = "Film List By Initial.";
+              var navlist = data.TiffTitleNav.split(",");
+              $scope.navdata = navlist;
+          }  
       });
   }]);
 
-gpAppControllers.controller('ListByTitleCtrl', ['$scope', '$http', 
-  function ($scope, $http) {
-      $scope.pagename = "Film List - ";      
-      var titlevalue = getUrlVars()["title"];
-      //var apiurl = "/emsproxy/eventcollection/festival?filtername=title&filtervalue="+titlevalue+"&trimresult=true&mode=json";
+gpAppControllers.controller('ListByTitleCtrl', ['$scope', 'myTiffService',
+  function ($scope, $myTiffService) {
+      $scope.pagename = "Film List - ";
+      var titlevalue = getUrlVars()["title"];      
       var apiurl = "https://apps.tiff.net/industry/api/emsproxy/eventcollection/festival?filtername=title&filtervalue=" + titlevalue + "&trimresult=true&mode=json";
-      $scope.pagename = "Film List - " + titlevalue.toUpperCase();
-      $http({ method: 'GET', url: apiurl }).
-      success(function (data, status, headers, config) {
-          // this callback will be called asynchronously
-          // when the response is available
-          $scope.pagename = "Film List - " + titlevalue.toUpperCase()+".";
-          $scope.navdata = data;
-      }).
-      error(function (data, status) {
-          // called asynchronously if an error occurs
-          // or server returns response with an error status.
-          $scope.pagename = "Film List - Error";
-          $scope.navdata = "Error getting data. Check cross domain issues?";
+      $scope.pagename = "Film List - " + titlevalue.toUpperCase();      
+      $myTiffService.getTiffApiData(apiurl).then(function (data) {
+          if (data == "Error") {
+              $scope.pagename = "Film List - Error";
+              $scope.navdata = "Error getting data. Check cross domain issues?";
+          } else {
+              $scope.pagename = "Film List - " + titlevalue.toUpperCase() + ".";
+              $scope.navdata = data;
+          }
       });
   }]);
 
-gpAppControllers.controller('EventCtrl', ['$scope', '$http', '$sce', 
-  function ($scope, $http, $sce) {
+gpAppControllers.controller('EventCtrl', ['$scope', 'myTiffService', '$sce',
+  function ($scope, $myTiffService, $sce) {
+      //$sce is used to render html in filmnote and filmpitch data
       $scope.pagename = "Tiff - ";
       $scope.havechildren = false;
       $scope.haveparent = false;
-      var eventid = getUrlVars()["eventid"];     
+      var eventid = getUrlVars()["eventid"];
       //var apiurl = "/emsproxy/event/" + eventid + "?mode=json";
       var apiurl = "https://apps.tiff.net/industry/api/emsproxy/event/" + eventid + "?mode=json";
-      $http({ method: 'GET', url: apiurl }).
-      success(function (data, status, headers, config) {
-          // this callback will be called asynchronously
-          // when the response is available
-          $scope.eventdata = data;
-          $scope.filmpitch = "";
-          $scope.filmnote = "";          
-          var eventitle = "";
-          if (data.EventCollection[0] != null) {
-              if (data.EventCollection[0].article != null) {
-                  eventitle = eventitle + data.EventCollection[0].article + " ";
-              }
-              if (data.EventCollection[0].title != null) {
-                  eventitle = eventitle + data.EventCollection[0].title;
-              }
-              if (data.EventCollection[0].filmpitch != null) {
-                  $scope.filmpitch = $sce.trustAsHtml(data.EventCollection[0].filmpitch);
-              }
-              if (data.EventCollection[0].filmnote != null) {
-                  $scope.filmnote = $sce.trustAsHtml(data.EventCollection[0].filmnote);
-              }
-              if (data.EventCollection[0].children != null) {
-                  if (data.EventCollection[0].children[0] != null) {
-                      $scope.havechildren = true;
+      $myTiffService.getTiffApiData(apiurl).then(function (data) {
+          if (data == "Error") {
+              $scope.pagename = "Event Detail - Error";
+              $scope.eventdata = "Error getting data. Check cross domain issues?";
+          } else {              
+              $scope.eventdata = data;
+              $scope.filmpitch = "";
+              $scope.filmnote = "";
+              var eventitle = "";
+              if (data.EventCollection[0] != null) {
+                  if (data.EventCollection[0].article != null) {
+                      eventitle = eventitle + data.EventCollection[0].article + " ";
                   }
-              }
-              if (data.EventCollection[0].parents != null) {
-                  if (data.EventCollection[0].parents[0] != null) {
-                      $scope.haveparent = true;
-                      // todo merge parent schedule into event schedule for display in child page
-                      //for (var i = 0, l = data.EventCollection[0].parents.length; i < l; i++) {
-                      //    if (data.EventCollection[0].parents[i].schedule != null) {
-                      //        for (var j = 0, m = data.EventCollection[0].parents[i].schedule[j]; j < m; j++) {
-                      //            data.EventCollection[0].schedule.push(data.EventCollection[0].parents[i].schedule[j]);
-                      //        }
-                      //    }
-                      //}
+                  if (data.EventCollection[0].title != null) {
+                      eventitle = eventitle + data.EventCollection[0].title;
                   }
-              }
-              // sample code to create the carousel data
-              if (data.EventCollection[0].relatedmedia != null) {
-                  if (data.EventCollection[0].relatedmedia.length > 0) {
-                      for (var i = 0, l = data.EventCollection[0].relatedmedia.length; i < l; i++) {
-                          var imgtag = '<img src="' + data.EventCollection[0].relatedmedia[i].url + '" style="width:100%" />';
-                          // data in some films have the placeholder as valid image
-                          // ignore if film has more than one image
-                          if (l > 1) {
-                              if (imgtag.indexOf("placeholder_film_still") == -1) {
+                  if (data.EventCollection[0].filmpitch != null) {
+                      $scope.filmpitch = $sce.trustAsHtml(data.EventCollection[0].filmpitch);
+                  }
+                  if (data.EventCollection[0].filmnote != null) {
+                      $scope.filmnote = $sce.trustAsHtml(data.EventCollection[0].filmnote);
+                  }
+                  if (data.EventCollection[0].children != null) {
+                      if (data.EventCollection[0].children[0] != null) {
+                          $scope.havechildren = true;
+                      }
+                  }
+                  if (data.EventCollection[0].parents != null) {
+                      if (data.EventCollection[0].parents[0] != null) {
+                          $scope.haveparent = true;
+                          // todo merge parent schedule into event schedule for display in child page
+                          //for (var i = 0, l = data.EventCollection[0].parents.length; i < l; i++) {
+                          //    if (data.EventCollection[0].parents[i].schedule != null) {
+                          //        for (var j = 0, m = data.EventCollection[0].parents[i].schedule[j]; j < m; j++) {
+                          //            data.EventCollection[0].schedule.push(data.EventCollection[0].parents[i].schedule[j]);
+                          //        }
+                          //    }
+                          //}
+                      }
+                  }
+                  // sample code to create the carousel data
+                  if (data.EventCollection[0].relatedmedia != null) {
+                      if (data.EventCollection[0].relatedmedia.length > 0) {
+                          for (var i = 0, l = data.EventCollection[0].relatedmedia.length; i < l; i++) {
+                              var imgtag = '<img id="carousel_'+ i.toString()+'" src="' + data.EventCollection[0].relatedmedia[i].url + '" style="width:100%" />';
+                              // data in some films have the placeholder as valid image
+                              // ignore if film has more than one image
+                              if (l > 1) {
+                                  if (imgtag.indexOf("placeholder_film_still") == -1) {
+                                      $('.cycle-slideshow').cycle('add', imgtag);
+                                  }
+                              } else {
                                   $('.cycle-slideshow').cycle('add', imgtag);
                               }
-                          } else {
-                              $('.cycle-slideshow').cycle('add', imgtag);
                           }
+                      } else {
+                          var imgtag = '<img src="img/placeholder_film_still.gif" style="width:100%" />';
+                          $('.cycle-slideshow').cycle('add', imgtag);
                       }
                   } else {
                       var imgtag = '<img src="img/placeholder_film_still.gif" style="width:100%" />';
                       $('.cycle-slideshow').cycle('add', imgtag);
-                  }                  
-              } else {
-                  var imgtag = '<img src="img/placeholder_film_still.gif" style="width:100%" />';
-                  $('.cycle-slideshow').cycle('add', imgtag);
+                  }
               }
+              $scope.pagename = eventitle;
           }
-          $scope.pagename = eventitle;          
-      }).
-      error(function (data, status) {
-          // called asynchronously if an error occurs
-          // or server returns response with an error status.
-          $scope.pagename = "Event Detail - Error";
-          $scope.eventdata = "Error getting data. Check cross domain issues?";
       });      
   }]);
 
@@ -200,43 +218,35 @@ gpAppControllers.controller('PIScheduleCtrl', ['$scope',
       $scope.pagename = "Festival P&I Schedule";
   }]);
 
-gpAppControllers.controller('SchedDateCtrl', ['$scope', '$http',
-  function ($scope, $http) {     
+gpAppControllers.controller('SchedDateCtrl', ['$scope', 'myTiffService',
+  function ($scope, $myTiffService) {
       var scheddate = getUrlVars()["day"]
-      var apiurl="https://apps.tiff.net/industry/api/emsproxy/schedule/"+scheddate+"?mode=json";
-      $scope.pagename = "Tiff Schedule - " + scheddate;
-      $http({ method: 'GET', url: apiurl }).
-      success(function (data, status, headers, config) {
-          // this callback will be called asynchronously
-          // when the response is available          
-          $scope.scheddata = data;
-          $scope.pagename = "Tiff Schedule - " + scheddate+".";
-      }).
-      error(function (data, status) {
-          // called asynchronously if an error occurs
-          // or server returns response with an error status.
-          $scope.pagename = "Tiff Schedule - Error";
-          $scope.scheddata = "Error getting data. Check cross domain issues?";
+      var apiurl = "https://apps.tiff.net/industry/api/emsproxy/schedule/" + scheddate + "?mode=json";
+      $scope.pagename = "Tiff Schedule - " + scheddate;  
+      $myTiffService.getTiffApiData(apiurl).then(function (data) {
+          if (data == "Error") {
+              $scope.pagename = "Tiff Schedule - Error";
+              $scope.scheddata = "Error getting data. Check cross domain issues?";
+          } else {
+              $scope.scheddata = data;
+              $scope.pagename = "Tiff Schedule - " + scheddate + ".";
+          }
       });
   }]);
 
-gpAppControllers.controller('PISchedDateCtrl', ['$scope', '$http',
-  function ($scope, $http) {
+gpAppControllers.controller('PISchedDateCtrl', ['$scope', 'myTiffService',
+  function ($scope, $myTiffService) {
       var scheddate = getUrlVars()["day"]
       var apiurl = "https://apps.tiff.net/industry/api/emsproxy/schedule/" + scheddate + "?scheduletypes=1&mode=json";
-      $scope.pagename = "Tiff Schedule - " + scheddate;
-      $http({ method: 'GET', url: apiurl }).
-      success(function (data, status, headers, config) {
-          // this callback will be called asynchronously
-          // when the response is available          
-          $scope.scheddata = data;
-          $scope.pagename = "Tiff P&I Schedule - " + scheddate + ".";
-      }).
-      error(function (data, status) {
-          // called asynchronously if an error occurs
-          // or server returns response with an error status.
-          $scope.pagename = "Tiff Schedule - Error";
-          $scope.scheddata = "Error getting data. Check cross domain issues?";
+      $scope.pagename = "Tiff Schedule - " + scheddate;      
+      $myTiffService.getTiffApiData(apiurl).then(function (data) {
+          if (data == "Error") {
+              $scope.pagename = "Tiff P&I Schedule - Error";
+              $scope.scheddata = "Error getting data. Check cross domain issues?";
+          } else {
+              $scope.scheddata = data;
+              $scope.pagename = "Tiff P&I Schedule - " + scheddate + ".";
+          }
       });
   }]);
 
@@ -265,50 +275,43 @@ gpAppControllers.controller('ProgrammesCtrl', ['$scope',
       $scope.pagename = "Festival Programmes";
   }]);
 
-gpAppControllers.controller('SingleProgrammeCtrl', ['$scope', '$http',
-  function ($scope, $http) {
+gpAppControllers.controller('SingleProgrammeCtrl', ['$scope', 'myTiffService',
+  function ($scope, $myTiffService) {
       var myprogramme = getUrlVars()["programme"];
       // deal with exception where we filter by tags instead of programmes data
       var myfiltername = "programmes.programmeSeries";
       if (myprogramme == "Manifesto" || myprogramme == "Next+Wave") {
           myfiltername = "tags.tagText";
       }
-      var apiurl = "https://apps.tiff.net/industry/api/emsproxy/eventcollection/festival?filtername="+myfiltername+"&filtervalue=" + myprogramme + "&trimresult=true&mode=json";
+      var apiurl = "https://apps.tiff.net/industry/api/emsproxy/eventcollection/festival?filtername=" + myfiltername + "&filtervalue=" + myprogramme + "&trimresult=true&mode=json";
       $scope.pagename = "Film List - " + myprogramme.replace("+", " ");
-      $http({ method: 'GET', url: apiurl }).
-      success(function (data, status, headers, config) {
-          // this callback will be called asynchronously
-          // when the response is available
-          $scope.pagename = "Film List - " + myprogramme.replace("+", " ") + ".";
-          $scope.navdata = data;
-      }).
-      error(function (data, status) {
-          // called asynchronously if an error occurs
-          // or server returns response with an error status.
-          $scope.pagename = "Film List - Error";
-          $scope.navdata = "Error getting data. Check cross domain issues?";
+      $myTiffService.getTiffApiData(apiurl).then(function (data) {
+          if (data == "Error") {
+              $scope.pagename = "Film List - Error";
+              $scope.navdata = "Error getting data. Check cross domain issues?";
+          } else {
+              $scope.pagename = "Film List - " + myprogramme.replace("+", " ") + ".";
+              $scope.navdata = data;
+          }
       });
   }]);
 
-gpAppControllers.controller('SearchCtrl', ['$scope', '$http',
-  function ($scope, $http) {
-      var mysearch = getUrlVars()["q"];     
+gpAppControllers.controller('SearchCtrl', ['$scope', 'myTiffService',
+  function ($scope, $myTiffService) {
+      var mysearch = getUrlVars()["q"];
       var apiurl = "https://apps.tiff.net/industry/api/emsproxy/eventcollection/festivalsearch?q=" + mysearch + "&trimresult=true&mode=json";
-      $scope.pagename = "Film Search - " + mysearch.replace("+", " ");
-      $http({ method: 'GET', url: apiurl }).
-      success(function (data, status, headers, config) {
-          // this callback will be called asynchronously
-          // when the response is available
-          $scope.pagename = "Film Search Results For: " + mysearch.replace("+", " ");
-          $scope.navdata = data;
-      }).
-      error(function (data, status) {
-          // called asynchronously if an error occurs
-          // or server returns response with an error status.
-          $scope.pagename = "Film Search - Error";
-          $scope.navdata = "Error getting data. Check cross domain issues?";
+      $scope.pagename = "Film Search - " + mysearch.replace("+", " ");     
+      $myTiffService.getTiffApiData(apiurl).then(function (data) {
+          if (data == "Error") {
+              $scope.pagename = "Film Search - Error";
+              $scope.navdata = "Error getting data. Check cross domain issues?";
+          } else {
+              $scope.pagename = "Film Search Results For: " + mysearch.replace("+", " ");
+              $scope.navdata = data;
+          }
       });
   }]);
+
 
 
 

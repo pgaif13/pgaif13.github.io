@@ -9,7 +9,7 @@
     <script src="js/angular-sanitize.min.js"></script>
     <script src="js/gpapp.js"></script>
     <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
 </head>
 <body ng-app="gpApp">
     <div id="mainwrapper">
@@ -23,14 +23,16 @@
                 <h4>{{pagename}}</h4>                
                 <ul>
                     <li ng-repeat="eventi in navdata.EventCollection" class="listno">
-                        <a href="event.html?eventid={{eventi.eventId}}">
-                            <img ng-src="{{eventi.relatedmedia[0].url}}" style="width:200px" />
-                        </a><br />
+                        <a href="event.html?eventid={{eventi.eventId}}">                           
+                            <img ng-show="eventi.relatedmedia[0] == null" src="img/placeholder_film_still.gif" style="width:200px" />
+                            <img ng-show="eventi.relatedmedia[0] != null" ng-src="{{eventi.relatedmedia[0].url}}" style="width:200px" />
+                         </a><br />
                         <a href="event.html?eventid={{eventi.eventId}}">
                             {{eventi.article}} {{eventi.title}}
                         </a>
                     </li>
                 </ul>
+                <img id="spinner" ng-src="img/loadinfo.net.gif" style="display:none;">
             </div>
         </div>
      </div>

@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- jquery -->
+    <script src="../js/jquery-1.11.1.min.js"></script>    
+    <script src="../js/jquery.cycle2.js"></script>
+    <!-- jasmine -->
+    <script src="js/jasmine.js"></script>
+    <!-- jasmine's html reporting code and css -->
+    <script src="js/jasmine-html.js"></script>
+    <link href="css/jasmine.css" rel="stylesheet" />
+    <!-- angular itself -->
+    <script src="../js/angular.min.js"></script>
+    <script src="../js/angular-resource.min.js"></script>
+    <script src="../js/angular-route.min.js"></script>
+    <script src="../js/angular-sanitize.min.js"></script>
+    <!-- angular's testing helpers -->
+    <script src="js/angular-mocks.js"></script>
+    <!-- your angular app code -->
+    <script src="../js/gpapp.js"></script>
+    <!-- your Jasmine specs (tests) -->
+    <script src="js/specs1.js"></script>
+    <title>Jasmine Test Runner</title>
+</head>
+<body>
+    <!-- bootstrap jasmine! -->
+    <script>
+        var jasmineEnv = jasmine.getEnv();
+        // Tell it to add an Html Reporter
+        // this will add detailed HTML-formatted results
+        // for each spec ran.
+        jasmineEnv.addReporter(new jasmine.HtmlReporter());
+        // Execute the tests!
+        jasmineEnv.execute();
+    </script>
+
+    <!-- this is required to test that the controller creates the img tags inside the div with the img data -->
+    <!-- hide the div so we don't see the images on the test UI-->
+    <div style="display:none">
+        <div class="cycle-slideshow"
+             data-cycle-fx="scrollHorz"
+             data-cycle-speed="500">
+        </div>         
+    </div>
+</body>
+</html>
